@@ -1,16 +1,17 @@
-# Secure MCP Server Framework
+# Secure MCP Server
 
-A secure, context-optimized Model Context Protocol (MCP) server that makes it simple to expose safe, auditable tools to AI agents without bespoke glue code or risky execution paths.
+This project lets AI apps use your tools in a safe and simple way.
 
-## The problem
-- Teams want AI agents to call internal tools, APIs, and workflows, but stitching custom wrappers, auth, and logging around each tool is fragile and time-consuming.
-- Ad‑hoc servers often miss basic safeguards: input sanitization, rate limits, permission checks, or audit trails—leading to security and compliance risks.
-- Context bloat and token overuse make agents slow and expensive; most setups don’t manage relevance, budgets, or eviction.
+## The problem (in simple words)
+- People want AI to do real work (call APIs, run small tasks, use company tools).
+- But every time, they have to build custom code, add passwords, add logs, and make sure it’s safe.
+- This is hard, slow, and easy to break. It can also be risky if inputs are not checked.
 
-## How this solves it
-- Uses the MCP standard so any compatible client can discover, invoke, and compose tools consistently—no bespoke adapters.
-- Built‑in security primitives: sanitized inputs, per‑tool rate limits and timeouts, role/permission checks, and lightweight audit events.
-- Context intelligence: session‑scoped memory with token budgets, priority eviction, and relevance utilities to keep prompts lean.
-- Operational visibility: minimal metrics for requests, tool outcomes, durations, and anomalies so teams can monitor real usage.
-- Cloud‑ready by design: a compact, dependency‑checked FastMCP server that you can run locally or deploy to a managed MCP platform.
+## How this project helps
+- It uses a common “plug” (called MCP) so any AI app that understands MCP can use your tools without special code.
+- It keeps things safe: it checks inputs, limits how often tools run, and records what happened.
+- It remembers only what matters: it avoids dumping too much text to the AI, so it stays fast and low‑cost.
+- It shows simple stats: how many times tools ran and how long they took.
+- You can run it on your computer or a cloud that supports MCP.
 
+That’s it—simple, safe, and ready to use with AI.
