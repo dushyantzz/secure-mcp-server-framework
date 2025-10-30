@@ -1,5 +1,4 @@
-"""Secure MCP Server - A production-ready MCP server with security and multi-tenant support."""
+"""Package init for secure_mcp_server."""
 
-__version__ = "1.0.0"
-__author__ = "Dushyant"
-__email__ = "dushyantkv508@gmail.com"
+# Ensure submodules are available for imports
+from .monitoring import MetricsCollector  # noqa: F401
