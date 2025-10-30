@@ -1,49 +1,16 @@
-# Secure MCP Server (FastMCP)
+# Secure MCP Server Framework
 
-A secure, context-optimized MCP server built with FastMCP, designed for FastMCP Cloud deployment. It includes authentication, rate limiting, input sanitization, sandboxed tool execution, dynamic context, monitoring, and multi-tenant scaffolding.
+A secure, context-optimized Model Context Protocol (MCP) server that makes it simple to expose safe, auditable tools to AI agents without bespoke glue code or risky execution paths.
 
-## Features
-- FastMCP-compliant MCP server ready for Cloud
-- JWT-like auth scaffold via AuthManager, API key support
-- Role-based permission checks and audit logging
-- Rate limiting and input sanitization
-- Sandboxed tool execution with timeouts
-- Built-in tools: echo, calculator, text_processor, secure_hash, uuid_generator, datetime_info, system_info (admin), context_summary
-- Context manager with token budgets and eviction
-- Metrics collector + basic anomaly hooks
+## The problem
+- Teams want AI agents to call internal tools, APIs, and workflows, but stitching custom wrappers, auth, and logging around each tool is fragile and time-consuming.
+- Ad‑hoc servers often miss basic safeguards: input sanitization, rate limits, permission checks, or audit trails—leading to security and compliance risks.
+- Context bloat and token overuse make agents slow and expensive; most setups don’t manage relevance, budgets, or eviction.
 
-## Quick start
-1. Clone and setup
-```
-python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-cp .env.example .env
-# set SECRET_KEY and ADMIN_PASSWORD in .env
-```
+## How this solves it
+- Uses the MCP standard so any compatible client can discover, invoke, and compose tools consistently—no bespoke adapters.
+- Built‑in security primitives: sanitized inputs, per‑tool rate limits and timeouts, role/permission checks, and lightweight audit events.
+- Context intelligence: session‑scoped memory with token budgets, priority eviction, and relevance utilities to keep prompts lean.
+- Operational visibility: minimal metrics for requests, tool outcomes, durations, and anomalies so teams can monitor real usage.
+- Cloud‑ready by design: a compact, dependency‑checked FastMCP server that you can run locally or deploy to a managed MCP platform.
 
-2. Run locally
-```
-python -m secure_mcp_server.main
-```
-
-3. Use with MCP client
-- Connect using stdio per FastMCP. Tools are auto-registered by decorators.
-
-## FastMCP Cloud deployment
-- This repo includes `fastmcp.yaml` manifest.
-- Configure environment variables (SECRET_KEY, ADMIN_PASSWORD at minimum).
-- Set start command from manifest (python -m secure_mcp_server.main).
-
-## Configuration
-See `.env.example` for all settings. Key vars: SECRET_KEY, ADMIN_PASSWORD, DATABASE_URL, ENABLE_TOOL_SANDBOXING.
-
-## Extending tools
-Add new tool functions in `secure_mcp_server/main.py` using `@mcp.tool()` and implement execution in `secure_mcp_server/tools.py` if centralized handling is preferred.
-
-## Security notes
-- Calculator uses safe eval with restricted namespace.
-- Hash tool supports md5/sha1/sha256/sha512; prefer sha256+.
-- System info tool is admin only.
-
-## License
-MIT
