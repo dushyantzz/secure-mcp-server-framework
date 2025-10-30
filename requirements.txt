@@ -1,6 +1,6 @@
 # FastMCP Core Dependencies
 fastmcp==2.12.5
-mcp==1.0.0
+mcp==1.12.4
 
 # Security and Authentication
 passlib[bcrypt]==1.7.4
