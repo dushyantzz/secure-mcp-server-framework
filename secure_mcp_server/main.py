@@ -2,6 +2,8 @@
 
 import asyncio
 import os
+import signal
+import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -60,8 +62,7 @@ class SecureMCPServer:
     def _setup_server(self):
         """Setup MCP server with security middleware and tools."""
         
-        # Add authentication middleware
-        @self.mcp.middleware
+        # Define middleware functions
         async def auth_middleware(request, call_next):
             """Authentication middleware for all MCP requests."""
             # Extract user context from request if available
@@ -85,9 +86,7 @@ class SecureMCPServer:
             response = await call_next(request)
             
             return response
-        
-        # Add security middleware
-        @self.mcp.middleware
+            
         async def security_middleware(request, call_next):
             """Security middleware for input validation and rate limiting."""
             # Rate limiting
@@ -103,6 +102,10 @@ class SecureMCPServer:
             response = await call_next(request)
             return response
         
+        # Register middleware
+        self.mcp.add_middleware(auth_middleware)
+        self.mcp.add_middleware(security_middleware)
+        
         # Register all tools
         self._register_tools()
         
@@ -117,14 +120,7 @@ class SecureMCPServer:
         
         @self.mcp.tool()
         async def echo(text: str) -> Dict[str, Any]:
-            """Echo back the provided text.
-            
-            Args:
-                text: The text to echo back
-                
-            Returns:
-                Dict containing the echoed text and metadata
-            """
+            """Echo back the provided text."""
             return await self.tool_registry.execute_tool(
                 'echo', 
                 {'text': text}, 
@@ -133,14 +129,7 @@ class SecureMCPServer:
         
         @self.mcp.tool()
         async def calculator(expression: str) -> Dict[str, Any]:
-            """Perform mathematical calculations safely.
-            
-            Args:
-                expression: Mathematical expression to evaluate (e.g., "2 + 2 * 3")
-                
-            Returns:
-                Dict containing the calculation result
-            """
+            """Perform mathematical calculations safely."""
             return await self.tool_registry.execute_tool(
                 'calculator', 
                 {'expression': expression}, 
@@ -149,15 +138,7 @@ class SecureMCPServer:
         
         @self.mcp.tool()
         async def text_processor(text: str, operation: str) -> Dict[str, Any]:
-            """Process text with various operations.
-            
-            Args:
-                text: The text to process
-                operation: Operation to perform (uppercase, lowercase, reverse, word_count, title_case)
-                
-            Returns:
-                Dict containing the processed text
-            """
+            """Process text with various operations."""
             return await self.tool_registry.execute_tool(
                 'text_processor', 
                 {'text': text, 'operation': operation}, 
@@ -166,15 +147,7 @@ class SecureMCPServer:
         
         @self.mcp.tool()
         async def secure_hash(text: str, algorithm: str = "sha256") -> Dict[str, Any]:
-            """Generate secure hash of text.
-            
-            Args:
-                text: Text to hash
-                algorithm: Hashing algorithm (sha256, sha512, md5)
-                
-            Returns:
-                Dict containing the hash value
-            """
+            """Generate secure hash of text."""
             return await self.tool_registry.execute_tool(
                 'secure_hash', 
                 {'text': text, 'algorithm': algorithm}, 
@@ -183,14 +156,7 @@ class SecureMCPServer:
         
         @self.mcp.tool()
         async def uuid_generator(version: int = 4) -> Dict[str, Any]:
-            """Generate UUID.
-            
-            Args:
-                version: UUID version (1, 4)
-                
-            Returns:
-                Dict containing the generated UUID
-            """
+            """Generate UUID."""
             return await self.tool_registry.execute_tool(
                 'uuid_generator', 
                 {'version': version}, 
@@ -199,15 +165,7 @@ class SecureMCPServer:
         
         @self.mcp.tool() 
         async def datetime_info(timezone: str = "UTC", format_type: str = "iso") -> Dict[str, Any]:
-            """Get current date and time information.
-            
-            Args:
-                timezone: Timezone (UTC, local)
-                format_type: Format type (iso, readable, timestamp)
-                
-            Returns:
-                Dict containing datetime information
-            """
+            """Get current date and time information."""
             return await self.tool_registry.execute_tool(
                 'datetime_info', 
                 {'timezone': timezone, 'format_type': format_type}, 
@@ -216,11 +174,7 @@ class SecureMCPServer:
         
         @self.mcp.tool()
         async def system_info() -> Dict[str, Any]:
-            """Get system information (requires admin privileges).
-            
-            Returns:
-                Dict containing system information
-            """
+            """Get system information (requires admin privileges)."""
             return await self.tool_registry.execute_tool(
                 'system_info', 
                 {}, 
@@ -229,14 +183,7 @@ class SecureMCPServer:
         
         @self.mcp.tool()
         async def context_summary(session_id: str) -> Dict[str, Any]:
-            """Get context summary for a session.
-            
-            Args:
-                session_id: Session ID to get context for
-                
-            Returns:
-                Dict containing context summary
-            """
+            """Get context summary for a session."""
             return await self.tool_registry.execute_tool(
                 'context_summary', 
                 {'session_id': session_id}, 
@@ -282,12 +229,7 @@ class SecureMCPServer:
             time_range: str = "24h", 
             severity: str = "all"
         ) -> List[Dict[str, Any]]:
-            """Generate security audit prompt with recent security events.
-            
-            Args:
-                time_range: Time range for audit (1h, 24h, 7d)
-                severity: Severity filter (all, high, medium, low)
-            """
+            """Generate security audit prompt with recent security events."""
             # Check admin privileges
             user_context = getattr(self.mcp.current_request, 'user_context', {})
             if not user_context.get('is_admin', False):
@@ -313,11 +255,7 @@ class SecureMCPServer:
         async def performance_analysis_prompt(
             metric_type: str = "all"
         ) -> List[Dict[str, Any]]:
-            """Generate performance analysis prompt with system metrics.
-            
-            Args:
-                metric_type: Type of metrics to analyze (all, tools, sessions, system)
-            """
+            """Generate performance analysis prompt with system metrics."""
             metrics = await self.metrics_collector.get_performance_metrics(
                 metric_type=metric_type
             )
@@ -335,54 +273,88 @@ class SecureMCPServer:
     
     async def initialize(self):
         """Initialize all server components."""
-        logger.info("Initializing Secure MCP Server")
+        logger.info("Initializing server components")
         
-        # Initialize database
+        # Initialize components in parallel
         await self.database_manager.initialize()
-        
-        # Initialize context manager
         await self.context_manager.initialize()
-        
-        # Initialize tool registry
         await self.tool_registry.initialize()
         
-        logger.info("Secure MCP Server initialized successfully")
+        logger.info("Server initialization complete")
     
     async def cleanup(self):
-        """Cleanup server components."""
-        logger.info("Cleaning up Secure MCP Server")
+        """Cleanup server resources."""
+        logger.info("Starting cleanup")
         
-        await self.context_manager.cleanup()
-        await self.database_manager.cleanup()
-        
-        logger.info("Secure MCP Server cleanup complete")
-    
-    async def run(self):
-        """Run the MCP server."""
         try:
-            await self.initialize()
-            await self.mcp.run()
-        finally:
-            await self.cleanup()
+            # Cleanup components
+            await asyncio.gather(
+                self.context_manager.cleanup(),
+                self.database_manager.cleanup(),
+                self.mcp.shutdown()
+            )
+        except Exception as e:
+            logger.error("Cleanup error", error=str(e))
+        
+        logger.info("Cleanup complete")
+
+
+async def amain():
+    """Async entry point for the secure MCP server."""
+    try:
+        # Load settings
+        logger.info("Loading settings")
+        settings = get_settings()
+        
+        # Create server
+        logger.info("Creating MCP server")
+        server = SecureMCPServer(settings)
+        
+        # Initialize server
+        logger.info("Initializing server")
+        await server.initialize()
+        
+        # Start server
+        logger.info("Starting server")
+        await server.mcp.start()
+        
+        # Keep server running
+        while True:
+            await asyncio.sleep(1)
+            
+    except KeyboardInterrupt:
+        logger.info("Server shutdown requested")
+    except Exception as e:
+        logger.error("Server run error", error=str(e), exc_info=True)
+        raise
+    finally:
+        try:
+            logger.info("Shutting down server")
+            await server.cleanup()
+        except Exception as e:
+            logger.error("Cleanup error", error=str(e))
 
 
 def main():
     """Main entry point for the secure MCP server."""
-    import sys
+    # Configure event loop policy for Windows
+    if sys.platform == 'win32':
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
     
-    # Load settings
-    settings = get_settings()
+    # Setup signal handlers
+    def signal_handler(signum, frame):
+        raise KeyboardInterrupt
     
-    # Create and run server
-    server = SecureMCPServer(settings)
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
     
     try:
-        asyncio.run(server.run())
+        asyncio.run(amain())
     except KeyboardInterrupt:
-        logger.info("Server shutdown requested")
+        logger.info("Server shutdown initiated")
         sys.exit(0)
     except Exception as e:
-        logger.error("Server error", error=str(e))
+        logger.error("Fatal error", error=str(e), exc_info=True)
         sys.exit(1)
 
 

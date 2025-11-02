@@ -2,10 +2,10 @@
 
 import hashlib
 import secrets
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 from typing import Dict, Any, Optional
+import bcrypt
 import jwt
-from passlib.context import CryptContext
 import structlog
 
 from .config import Settings
@@ -18,7 +18,6 @@ class AuthManager:
     
     def __init__(self, settings: Settings):
         self.settings = settings
-        self.pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
         self.active_tokens: Dict[str, Dict[str, Any]] = {}
         
         # Create default admin user
@@ -31,7 +30,7 @@ class AuthManager:
                 "is_admin": True,
                 "is_active": True,
                 "tenant_id": settings.default_tenant,
-                "created_at": datetime.utcnow()
+                "created_at": datetime.now(UTC)
             }
         }
         
@@ -40,16 +39,21 @@ class AuthManager:
     
     def hash_password(self, password: str) -> str:
         """Hash a password using bcrypt."""
-        return self.pwd_context.hash(password)
+        salt = bcrypt.gensalt()
+        hashed = bcrypt.hashpw(password.encode('utf-8'), salt)
+        return hashed.decode('utf-8')
     
     def verify_password(self, plain_password: str, hashed_password: str) -> bool:
         """Verify a password against its hash."""
-        return self.pwd_context.verify(plain_password, hashed_password)
+        return bcrypt.checkpw(
+            plain_password.encode('utf-8'), 
+            hashed_password.encode('utf-8')
+        )
     
     def create_access_token(self, data: Dict[str, Any]) -> str:
         """Create a new access token."""
         to_encode = data.copy()
-        expire = datetime.utcnow() + timedelta(
+        expire = datetime.now(UTC) + timedelta(
             minutes=self.settings.access_token_expire_minutes
         )
         to_encode.update({"exp": expire, "type": "access"})
@@ -64,7 +68,7 @@ class AuthManager:
         token_id = hashlib.sha256(token.encode()).hexdigest()[:16]
         self.active_tokens[token_id] = {
             "user_id": data.get("sub"),
-            "created_at": datetime.utcnow(),
+            "created_at": datetime.now(UTC),
             "expires_at": expire,
             "type": "access"
         }
@@ -115,7 +119,7 @@ class AuthManager:
         self.api_keys[api_key] = {
             "user_id": user_id,
             "name": name,
-            "created_at": datetime.utcnow(),
+            "created_at": datetime.now(UTC),
             "last_used": None,
             "is_active": True
         }
@@ -130,7 +134,7 @@ class AuthManager:
             return None
         
         # Update last used timestamp
-        key_info["last_used"] = datetime.utcnow()
+        key_info["last_used"] = datetime.now(UTC)
         
         # Get user info
         user_id = key_info["user_id"]
