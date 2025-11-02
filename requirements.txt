@@ -1,6 +1,7 @@
 # FastMCP Core Dependencies
-fastmcp==2.12.5
-mcp==1.12.4
+fastmcp>=2.11.0
+mcp>=1.11.0
+fastapi>=0.100.0
 
 # Security and Authentication
 passlib[bcrypt]==1.7.4
@@ -13,8 +14,8 @@ aiosqlite==0.20.0
 redis==5.0.1
 
 # Configuration and Environment
-pydantic==2.8.2
-pydantic-settings==2.4.0
+pydantic>=2.11.7
+pydantic-settings>=2.4.0
 python-dotenv==1.1.0
 
 # Logging and Monitoring
@@ -26,7 +27,7 @@ psutil==5.9.8
 aiofiles==24.1.0
 httpx==0.28.1
 typer==0.12.5
-rich==13.9.2
+rich>=13.9.4
 
 # Development and Testing
 pytest==8.3.3
