@@ -14,4 +14,6 @@ This project lets AI apps use your tools in a safe and simple way.
 - It shows simple stats: how many times tools ran and how long they took.
 - You can run it on your computer or a cloud that supports MCP.
 
-That’s it—simple, safe, and ready to use with AI.
+That’s it, simple, safe, and ready to use with AI.
+
+Note: Still Its not completed, working on it
