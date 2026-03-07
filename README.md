@@ -81,6 +81,145 @@ This is a secure, easy-to-use server that lets AI assistants like Claude or GPT 
 
 ---
 
+## Available Tools
+
+| Tool | Description |
+|------|-------------|
+| **echo** | Echo back text with its character length |
+| **calculator** | Safely evaluate math expressions (`2 ** 10`, `math.sqrt(144)`, etc.) |
+| **text_processor** | uppercase, lowercase, title_case, reverse, word_count, char_count, strip |
+| **secure_hash** | Generate MD5 / SHA-1 / SHA-256 / SHA-512 hashes |
+| **uuid_generator** | Generate UUID v1 or v4 |
+| **datetime_info** | Current date/time in ISO, readable, timestamp, date-only, or time-only format |
+| **json_formatter** | Pretty-print and validate JSON strings |
+| **base64_codec** | Encode or decode Base64 strings |
+
+---
+
+## Use this MCP Server
+
+There are two ways anyone can start using this server right now.
+
+### Option A: FastMCP Cloud (hosted, zero setup)
+
+The server is deployed and live on FastMCP Cloud:
+
+```
+https://secure-mcp-server.fastmcp.app/mcp
+```
+
+> **Note:** This server is hosted under the **daredevil** organisation on FastMCP Cloud.
+> To connect, you need to be a member of the organisation.
+
+**How to join:**
+
+1. Go to [fastmcp.cloud](https://fastmcp.cloud) and sign in with your **GitHub** account.
+2. Ask the maintainer ([@dushyantzz](https://github.com/dushyantzz)) to invite you to the **daredevil** organisation — open an [issue](https://github.com/dushyantzz/secure-mcp-server-framework/issues) or reach out directly.
+3. Once you accept the invite, you can connect immediately.
+
+**Connect from Claude Desktop** — add this to your `claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "secure-mcp-server": {
+      "url": "https://secure-mcp-server.fastmcp.app/mcp"
+    }
+  }
+}
+```
+
+**Connect from Cursor** — add this to your Cursor MCP settings:
+
+```json
+{
+  "mcpServers": {
+    "secure-mcp-server": {
+      "url": "https://secure-mcp-server.fastmcp.app/mcp"
+    }
+  }
+}
+```
+
+---
+
+### Option B: Docker (self-hosted, no account needed)
+
+Pull the image from DockerHub and run it yourself — no sign-ups, no org invites.
+
+```bash
+docker pull dushyantzz/secure-mcp-server:latest
+```
+
+**Run the MCP server:**
+
+```bash
+docker run -d -p 8000:8000 \
+  -e SECRET_KEY=change-me-to-a-strong-secret \
+  dushyantzz/secure-mcp-server:latest
+```
+
+Your MCP server is now running at `http://localhost:8000/mcp`.
+
+**Run the FastAPI REST server instead:**
+
+```bash
+docker run -d -p 8000:8000 \
+  -e SECRET_KEY=change-me-to-a-strong-secret \
+  -e MODE=api \
+  dushyantzz/secure-mcp-server:latest
+```
+
+REST API docs will be available at `http://localhost:8000/docs`.
+
+**Connect any MCP client** to `http://localhost:8000/mcp` — same JSON config as above, just swap the URL.
+
+**With docker-compose** (includes PostgreSQL, Redis, Prometheus, Grafana):
+
+```bash
+git clone https://github.com/dushyantzz/secure-mcp-server-framework.git
+cd secure-mcp-server-framework
+docker-compose up
+```
+
+---
+
+### Option C: Run from source
+
+```bash
+git clone https://github.com/dushyantzz/secure-mcp-server-framework.git
+cd secure-mcp-server-framework
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Copy and edit environment config
+cp .env.example .env
+
+# Run the MCP server
+fastmcp run server.py --transport streamable-http --port 8000
+
+# Or run the FastAPI REST server
+uvicorn mcp_server.main:app --host 0.0.0.0 --port 8000
+```
+
+---
+
+## Environment Variables
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `SECRET_KEY` | Yes | — | Secret key for JWT token signing |
+| `MODE` | No | `mcp` | Docker mode: `mcp` (MCP server) or `api` (FastAPI REST server) |
+| `DATABASE_URL` | No | `sqlite+aiosqlite:///./secure_mcp.db` | Database connection string |
+| `DEBUG` | No | `false` | Enable debug mode and API docs |
+| `LOG_LEVEL` | No | `INFO` | Logging level |
+| `RATE_LIMIT_RPM` | No | `60` | Max requests per minute per user |
+
+See [`.env.example`](.env.example) for the full list.
+
+---
+
 ## In summary
 - **Secure MCP Server** gives you all the power of an MCP server
 - **PLUS** enterprise-level safety and logs
