@@ -1,6 +1,7 @@
 # Secure MCP Server Framework
 
 ## What is this project?
+### Everybody wants to build with MCP, but no one is caring about the API Costs...
 This is a secure, easy-to-use server that lets AI assistants like Claude or GPT safely access your tools, scripts, and APIs. It acts as a professional "security guard" between AI and your valuable resources, so you always stay in control.
 
 ---
