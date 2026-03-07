@@ -160,6 +160,24 @@ async def register(
     )
 
 
+async def get_current_user(
+    token: str = Depends(oauth2_scheme),
+    security_manager: SecurityManager = Depends(get_security_manager)
+) -> dict:
+    """Get current authenticated user."""
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    
+    payload = security_manager.verify_token(token)
+    if payload is None:
+        raise credentials_exception
+    
+    return payload
+
+
 @router.post("/api-keys", response_model=APIKeyResponse)
 async def create_api_key(
     api_key_data: APIKeyCreate,
@@ -181,24 +199,6 @@ async def create_api_key(
         prefix=api_key[:8] + "...",
         created_at="2025-10-30T01:00:00Z"
     )
-
-
-async def get_current_user(
-    token: str = Depends(oauth2_scheme),
-    security_manager: SecurityManager = Depends(get_security_manager)
-) -> dict:
-    """Get current authenticated user."""
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-    
-    payload = security_manager.verify_token(token)
-    if payload is None:
-        raise credentials_exception
-    
-    return payload
 
 
 @router.get("/me", response_model=UserResponse)

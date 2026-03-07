@@ -42,6 +42,7 @@ class SecureMCPServer:
     def __init__(self, settings: Optional[Settings] = None):
         self.settings = settings or get_settings()
         self.mcp = FastMCP(name="Secure MCP Server Framework")
+        self.running = False
         
         # Initialize components
         self.auth_manager = AuthManager(self.settings)
@@ -103,8 +104,7 @@ class SecureMCPServer:
             return response
         
         # Register middleware
-        self.mcp.add_middleware(auth_middleware)
-        self.mcp.add_middleware(security_middleware)
+        self.mcp.middleware = [auth_middleware, security_middleware]  # FastMCP uses a middleware list
         
         # Register all tools
         self._register_tools()
@@ -282,16 +282,44 @@ class SecureMCPServer:
         
         logger.info("Server initialization complete")
     
+    async def start(self):
+        """Start the server."""
+        if self.running:
+            logger.warning("Server is already running")
+            return
+        
+        logger.info("Starting server")
+        self.running = True
+        
+        # Initialize internal FastMCP server
+        # Note: FastMCP doesn't have a start() method, it's ready after initialization
+        logger.info("Server started successfully")
+    
+    async def stop(self):
+        """Stop the server."""
+        if not self.running:
+            logger.warning("Server is not running")
+            return
+        
+        logger.info("Stopping server")
+        self.running = False
+        
+        # Perform cleanup
+        await self.cleanup()
+        
+        logger.info("Server stopped successfully")
+    
     async def cleanup(self):
         """Cleanup server resources."""
         logger.info("Starting cleanup")
         
         try:
-            # Cleanup components
+            # Cleanup components in parallel
             await asyncio.gather(
                 self.context_manager.cleanup(),
                 self.database_manager.cleanup(),
-                self.mcp.shutdown()
+                # No need for mcp.shutdown() as FastMCP doesn't require explicit cleanup
+                return_exceptions=True
             )
         except Exception as e:
             logger.error("Cleanup error", error=str(e))
@@ -316,23 +344,25 @@ async def amain():
         
         # Start server
         logger.info("Starting server")
-        await server.mcp.start()
+        await server.start()
         
         # Keep server running
-        while True:
-            await asyncio.sleep(1)
+        try:
+            while True:
+                await asyncio.sleep(1)
+        except asyncio.CancelledError:
+            logger.info("Server shutdown requested")
+            await server.stop()
             
     except KeyboardInterrupt:
         logger.info("Server shutdown requested")
+        if 'server' in locals():
+            await server.stop()
     except Exception as e:
         logger.error("Server run error", error=str(e), exc_info=True)
+        if 'server' in locals():
+            await server.stop()
         raise
-    finally:
-        try:
-            logger.info("Shutting down server")
-            await server.cleanup()
-        except Exception as e:
-            logger.error("Cleanup error", error=str(e))
 
 
 def main():
